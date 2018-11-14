@@ -30,16 +30,17 @@ _start:
 	mov $N, %rdx
 	syscall	
 
+	mov %rax, %r9
+	mov %rax, %rcx
 	mov 32(%rsp), %r10
 	mov (%r10), %r10
 _xor:
-	mov (%rsi), %cl
-	cmp $0, %cl
+	cmp $0, %rcx
+	dec %rcx
 	je _write_file
 	xor %r10, (%rsi)
 	inc %rsi
 	jmp _xor
-
 
 _write_file:
 	movq $OPEN, %rax
@@ -52,7 +53,7 @@ _write_file:
 	mov %rax, %rdi
 	mov $WRITE, %rax
 	mov $buffer, %rsi
-	mov $N, %rdx
+	mov %r9, %rdx
 	syscall	
 
 	mov %rax, %rdi
