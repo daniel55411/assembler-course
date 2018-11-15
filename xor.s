@@ -10,7 +10,6 @@
 	msg:
 		.ascii "Error!\n"
 	len = . - msg
-	filename: .asciz "test.txt"
 	buffer: .skip N
 
 .text
