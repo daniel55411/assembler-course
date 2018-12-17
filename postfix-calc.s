@@ -22,11 +22,11 @@
 
 _start:
 	# %r15 - argc
+    # %r14 - global counter for argv
+    # %r11 - global number counter
 	pop %r15
     dec %r15
-    # %r14 - global counter for argv
     mov $0, %r14
-    # %r11 - global number counter
     mov $0, %r11
     mov %rsp, %rbp
 
@@ -86,7 +86,10 @@ parse_argv:
 	jmp .L_parse_number
 
 .L_check_minus:
-	cmp $0, (%rbx, 1)
+	# bad solution
+	mov $1, %rax
+	mov (%rbx, %rax), %dl
+	cmp $0, %dl
 	je .L_sub
 	jmp .L_parse_number #for clarity
 
@@ -137,42 +140,31 @@ parse_argv:
 	ret
 
 .L_add:
-	pop %r13
-	pop %rcx
-	pop %rax
-
-	sub $2, %r11
-	cmp $0, %r11
-	jl .L_invalid_record
+	call .L_extract_vars
 
 	add %rcx, %rax
 	jmp *%r13
 
 .L_sub:
-	pop %r13
-	pop %rcx
-	pop %rax
-
-	sub $2, %r11
-	cmp $0, %r11
-	jl .L_invalid_record
+	call .L_extract_vars
 
 	sub %rcx, %rax
 	jmp *%r13
 
 .L_mul:
-	pop %r13
-	pop %rcx
-	pop %rax
-
-	sub $2, %r11
-	cmp $0, %r11
-	jl .L_invalid_record
+	call .L_extract_vars
 
 	imul %rcx, %rax
 	jmp *%r13
 
 .L_div:
+	call .L_extract_vars
+
+	idiv %rcx
+	jmp *%r13
+
+.L_extract_vars:
+	pop %r12
 	pop %r13
 	pop %rcx
 	pop %rax
@@ -182,8 +174,7 @@ parse_argv:
 	cmp $0, %r11
 	jl .L_invalid_record
 
-	idiv %rcx
-	jmp *%r13
+	jmp *%r12
 
 .L_digit_error:
 	mov $digit_error_message, %rdi
