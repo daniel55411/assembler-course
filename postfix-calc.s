@@ -14,7 +14,8 @@
 		.asciz "Error while parsing a number\n"
 	invalid_record_message: 
 		.asciz "Invalid record of postfix\n"
-
+	division_error_message: 
+		.asciz "Division by zero\n"
 
 #---------------- CODE ----------------#
 .text
@@ -103,8 +104,9 @@ parse_argv:
 	mov $0, %r12
 	mov $0, %rax
 	mov $10, %rsi
+	movb (%rbx, %r13), %cl
 
-	cmp $SUB_SYMBOL, (%rbx, %r13)
+	cmp $SUB_SYMBOL, %cl
 	jne .L_parse_digit
 
 	mov $1, %r12
@@ -114,7 +116,7 @@ parse_argv:
 	# %rcx - store byte 
 	movb (%rbx, %r13), %cl
 
-	cmp $0, %rcx
+	cmp $0, %cl
 	je .L_end_parse_number
 
 	cmp $48, %cl
@@ -124,7 +126,7 @@ parse_argv:
 
 	sub $48, %cl
 	mul %sil
-	add %rcx, %rax
+	add %cl, %al
 	inc %r13
 	jmp .L_parse_digit
 
@@ -139,36 +141,56 @@ parse_argv:
 	neg %rax
 	ret
 
+#----- ADD -----#
 .L_add:
 	call .L_extract_vars
 
 	add %rcx, %rax
 	jmp *%r13
+#----- END ADD -----#
 
+#----- SUB -----#
 .L_sub:
 	call .L_extract_vars
 
 	sub %rcx, %rax
 	jmp *%r13
+#----- END SUB -----#
 
+#----- MUL -----#
 .L_mul:
 	call .L_extract_vars
 
 	imul %rcx, %rax
 	jmp *%r13
+#----- END MUL -----#
 
+#----- DIV -----#
 .L_div:
 	call .L_extract_vars
 
+	cmp $0, %rcx
+	je .L_division_by_zero
+
+	cmp $0, %rax
+	jl .L_negative_div
+
+.L_positive_div:
 	idiv %rcx
 	jmp *%r13
 
+.L_negative_div:
+	neg %rax
+	neg %rcx
+	jmp .L_positive_div
+#----- END DIV -----#
+
 .L_extract_vars:
+	xor %rdx, %rdx
 	pop %r12
 	pop %r13
 	pop %rcx
 	pop %rax
-	xor %rdx, %rdx
 
 	sub $2, %r11
 	cmp $0, %r11
@@ -186,6 +208,10 @@ parse_argv:
 	call print_cstring
 	jmp _exit
 
+.L_division_by_zero:
+	mov $division_error_message, %rdi
+	call print_cstring
+	jmp _exit
 
 
 # https://eli.thegreenplace.net/2013/07/24/displaying-all-argv-in-x64-assembly
