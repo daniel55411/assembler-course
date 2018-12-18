@@ -103,7 +103,7 @@ parse_argv:
 	mov $0, %r13
 	mov $0, %r12
 	mov $0, %rax
-	mov $10, %rsi
+	mov $0, %rcx
 	movb (%rbx, %r13), %cl
 
 	cmp $SUB_SYMBOL, %cl
@@ -113,7 +113,8 @@ parse_argv:
 	inc %r13
 
 .L_parse_digit:
-	# %rcx - store byte 
+	# %rcx - store byte
+
 	movb (%rbx, %r13), %cl
 
 	cmp $0, %cl
@@ -125,8 +126,8 @@ parse_argv:
 	jg .L_digit_error
 
 	sub $48, %cl
-	mul %sil
-	add %cl, %al
+	imul $10, %rax, %rax
+	add %rcx, %rax
 	inc %r13
 	jmp .L_parse_digit
 
